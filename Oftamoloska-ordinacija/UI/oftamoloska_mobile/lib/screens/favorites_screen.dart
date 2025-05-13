@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:oftamoloska_mobile/providers/favorites_provider.dart';
 import 'package:oftamoloska_mobile/providers/korisnik_provider.dart';
@@ -41,7 +42,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       setState(() {
         favoriteProducts = data.result;
       });
-    } catch (e) {}
+    } catch (e) {
+      print("Greška prilikom dohvata omiljenih proizvoda: $e");
+    }
   }
 
   Future<int> getPatientId() async {
@@ -56,64 +59,67 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return pacijent.korisnikId!;
   }
 
+  Future<Product?> _getProduct(int proizvodId) async {
+    return await _productProvider.getById(proizvodId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      title_widget: Text("Favorites"),
+      title_widget: const Text("Favorites"),
       child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: const [
-            DataColumn(label: Text('Image')),
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('')),
-          ],
-          rows: favoriteProducts.map((favorite) => DataRow(
-            cells: [
-            DataCell(
-  favoriteProducts.isNotEmpty
-      ? Container(
-          width: 100,
-          height: 100,
-          child: FutureBuilder<Product?>(
-            future: _productProvider.getById(favorite.proizvodId!),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Error');
-              } else if (!snapshot.hasData || snapshot.data == null) {
-                return Text('Product not found');
-              } else {
-                final product = snapshot.data!;
-                return imageFromBase64String(product.slika!); 
-              }
-            },
-          ),
-        )
-      : Text(""),
-),
-              DataCell(Text(favorite.datumDodavanja.toString())),
-               DataCell(
-              ElevatedButton(
-                onPressed: () => 
-                _deleteFavorite(favorite.omiljeniProizvodId),
-                child: Text('Delete'),
-              ),),
-            ],
-          )).toList(),
+        child: Column(
+          children: favoriteProducts.map((favorite) {
+            return FutureBuilder<Product?>(
+              future: _getProduct(favorite.proizvodId!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                  return const Text('Error loading product');
+                } else {
+                  final product = snapshot.data!;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(
+                            base64Decode(product.slika!),
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          color: Colors.red,
+                          tooltip: "Remove from favorites",
+                          onPressed: () => _deleteFavorite(favorite.omiljeniProizvodId),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
+            );
+          }).toList(),
         ),
       ),
     );
   }
-  
-  _deleteFavorite(int? omiljeniProizvodId) async{
-     try {
-    await _favoritesProvider.delete(omiljeniProizvodId); 
-    _fetchFavorites();
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Product successfully removed from favorites.")),
+
+  Future<void> _deleteFavorite(int? omiljeniProizvodId) async {
+    try {
+      await _favoritesProvider.delete(omiljeniProizvodId);
+      await _fetchFavorites();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Product successfully removed from favorites.")),
       );
-  } catch (e) {}
+    } catch (e) {
+      print("Greška prilikom brisanja: $e");
+    }
   }
 }
