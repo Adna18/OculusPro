@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OftamoloskaOrdinacija.Services.Database;
 
@@ -11,9 +12,11 @@ using OftamoloskaOrdinacija.Services.Database;
 namespace OftamoloskaOrdinacija.Services.Migrations
 {
     [DbContext(typeof(OftamoloskiCentarContext))]
-    partial class OftamoloskiCentarContextModelSnapshot : ModelSnapshot
+    [Migration("20250513221324_databaseSeed")]
+    partial class databaseSeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
