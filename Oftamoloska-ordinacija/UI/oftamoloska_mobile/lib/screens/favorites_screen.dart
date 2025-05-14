@@ -116,7 +116,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       await _favoritesProvider.delete(omiljeniProizvodId);
       await _fetchFavorites();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Product successfully removed from favorites.")),
+        const SnackBar(content: Text("Product successfully removed from favorites."),
+        backgroundColor: Colors.green,
+        ),
+        
       );
     } catch (e) {
       print("Greška prilikom brisanja: $e");

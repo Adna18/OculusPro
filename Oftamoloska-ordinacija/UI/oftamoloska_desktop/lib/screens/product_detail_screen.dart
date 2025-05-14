@@ -21,40 +21,36 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-
   final _formKey = GlobalKey<FormBuilderState>();
   Map<String, dynamic> _initialValue = {};
   late VrsteProizvodaProvider _vrsteProizvodaProvider;
   late ProductProvider _productProvider;
 
   SearchResult<VrsteProizvoda>? VrsteProizvodaResult;
-  bool isLoading = true; 
+  bool isLoading = true;
+
+  File? _image;
+  String? _base64Image;
 
   @override
-  void initState() { 
+  void initState() {
     super.initState();
     _initialValue = {
-      'sifra' : widget.product?.sifra,
-      'naziv' : widget.product?.naziv,
-      'cijena' : widget.product?.cijena.toString(),
-      'dostupno' : widget.product?.dostupno.toString(),
-      'vrstaId' : widget.product?.vrstaId.toString(),
-      };
+      'sifra': widget.product?.sifra,
+      'naziv': widget.product?.naziv,
+      'cijena': widget.product?.cijena?.toString(),
+      'dostupno': widget.product?.dostupno?.toString(),
+      'vrstaId': widget.product?.vrstaId?.toString(),
+    };
 
-      _vrsteProizvodaProvider = context.read<VrsteProizvodaProvider>(); 
-      _productProvider = context.read<ProductProvider>(); 
+    _vrsteProizvodaProvider = context.read<VrsteProizvodaProvider>();
+    _productProvider = context.read<ProductProvider>();
 
-      initForm();
+    initForm();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
-  Future initForm() async{
+  Future initForm() async {
     VrsteProizvodaResult = await _vrsteProizvodaProvider.get();
-   
     setState(() {
       isLoading = false;
     });
@@ -62,86 +58,99 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var productDetailState = Provider.of<ProductDetailState>(context, listen: false);
-
-    return MasterScreenWidget(                        
+    return MasterScreenWidget(
       child: Column(
         children: [
-          isLoading ? Container() : _buildForm(), 
+          isLoading ? Container() : _buildForm(),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 ElevatedButton(
-                  onPressed: () async {
-                    final isNameValid = _formKey.currentState!.fields['naziv']?.validate();
-                    final isCodeValid = _formKey.currentState!.fields['sifra']?.validate();
-                    final isPriceValid = _formKey.currentState!.fields['cijena']?.validate();
-                    final isTypeValid = _formKey.currentState!.fields['vrstaId']?.validate();
+                    onPressed: () async {
+                      final isNameValid =
+                          _formKey.currentState!.fields['naziv']?.validate();
+                      final isCodeValid =
+                          _formKey.currentState!.fields['sifra']?.validate();
+                      final isPriceValid =
+                          _formKey.currentState!.fields['cijena']?.validate();
+                      final isTypeValid =
+                          _formKey.currentState!.fields['vrstaId']?.validate();
 
-                    if (isNameValid == null || !isNameValid ||
-                        isCodeValid == null || !isCodeValid ||
-                        isPriceValid == null || !isPriceValid ||
-                        isTypeValid == null || !isTypeValid ) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Please fix all required fields before saving.'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (_base64Image == null || _base64Image!.isEmpty) {
-                      _base64Image = base64Encode(File('assets/images/no-image.jpg').readAsBytesSync());
-                    }
-                    _formKey.currentState?.saveAndValidate();
-
-                    var request = new Map.from(_formKey.currentState!.value); 
-                    request['slika'] = _base64Image;
-                    
-                    try {
-                      if(widget.product == null) { 
-                        await _productProvider.insert(request);
+                      if (isNameValid == null ||
+                          !isNameValid ||
+                          isCodeValid == null ||
+                          !isCodeValid ||
+                          isPriceValid == null ||
+                          !isPriceValid ||
+                          isTypeValid == null ||
+                          !isTypeValid) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Product successfully added.'),
-                            backgroundColor: Colors.green,
+                            content: Text(
+                                'Please fix all required fields before saving.'),
+                            backgroundColor: Colors.red,
                           ),
                         );
-                        _formKey.currentState?.reset();
-                        Navigator.pop(context, 'reload');
-                      } else {
-                        await _productProvider.update(widget.product!.proizvodId!, request);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Product successfully updated'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        Navigator.pop(context, 'reload');
+                        return;
                       }
-                    } on Exception catch (e) {
-                      showDialog(
-                        context: context, 
-                        builder: (BuildContext context) => AlertDialog(
-                          title: Text("Error"),
-                          content: Text(e.toString()),
-                          actions: [
-                            TextButton(onPressed: ()=> Navigator.pop(context), child: Text("OK"))
-                          ],
-                        ));
-                    }
-                  }, 
-                  child: Text("Save")
-                ),
+
+                      if (_base64Image == null || _base64Image!.isEmpty) {
+                        _base64Image = base64Encode(
+                            File('assets/images/no-image.jpg')
+                                .readAsBytesSync());
+                      }
+
+                      _formKey.currentState?.saveAndValidate();
+                      var request =
+                          Map<String, dynamic>.from(_formKey.currentState!.value);
+                      request['slika'] = _base64Image;
+
+                      try {
+                        if (widget.product == null) {
+                          await _productProvider.insert(request);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Product successfully added.'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          _formKey.currentState?.reset();
+                          Navigator.pop(context, 'reload');
+                        } else {
+                          await _productProvider.update(
+                              widget.product!.proizvodId!, request);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Product successfully updated'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          Navigator.pop(context, 'reload');
+                        }
+                      } on Exception catch (e) {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) => AlertDialog(
+                                  title: Text("Error"),
+                                  content: Text(e.toString()),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context),
+                                        child: Text("OK"))
+                                  ],
+                                ));
+                      }
+                    },
+                    child: Text("Save")),
               ],
             ),
           ),
         ],
-      ), 
-      title: this.widget.product?.naziv ?? "Product details",
+      ),
+      title: widget.product?.naziv ?? "Product details",
     );
   }
 
@@ -164,7 +173,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Product code is required';
                       }
-                      return null; 
+                      return null;
                     },
                   ),
                 ),
@@ -177,7 +186,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Product name is required';
                       }
-                      return null; 
+                      return null;
                     },
                   ),
                 ),
@@ -202,15 +211,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Product Type is required';
                       }
-                      return null; 
+                      return null;
                     },
                     items: VrsteProizvodaResult?.result
-                      .map((item) => DropdownMenuItem(
-                        alignment: AlignmentDirectional.center,
-                        value: item.vrstaId.toString(),
-                        child: Text(item.naziv ?? ""),
-                      ))
-                      .toList() ?? [],
+                            .map((item) => DropdownMenuItem(
+                                  alignment: AlignmentDirectional.center,
+                                  value: item.vrstaId.toString(),
+                                  child: Text(item.naziv ?? ""),
+                                ))
+                            .toList() ??
+                        [],
                   ),
                 ),
                 SizedBox(width: 10),
@@ -229,7 +239,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       if (cijena < 1 || cijena > 10000) {
                         return "Price must be between 1 and 10,000";
                       }
-                      return null; 
+                      return null;
                     },
                   ),
                 ),
@@ -242,17 +252,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: FormBuilderField(
                     name: 'imageId',
                     builder: (field) {
-                      return InputDecorator(
-                        decoration: InputDecoration(
-                          label: Text('Select image'),
-                          errorText: field.errorText,
-                        ),
-                        child: ListTile(
-                          leading: Icon(Icons.photo),
-                          title: Text('Select image here'),
-                          trailing: Icon(Icons.file_upload),
-                          onTap: getImage,
-                        ),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          InputDecorator(
+                            decoration: InputDecoration(
+                              label: Text('Select image'),
+                              errorText: field.errorText,
+                              border: OutlineInputBorder(),
+                            ),
+                            child: ListTile(
+                              leading: Icon(Icons.photo),
+                              title: Text('Tap to select image'),
+                              trailing: Icon(Icons.file_upload),
+                              onTap: getImage,
+                            ),
+                          ),
+                          if (_image != null) ...[
+                            SizedBox(height: 10),
+                            Image.file(
+                              _image!,
+                              height: 150,
+                              fit: BoxFit.cover,
+                            ),
+                          ]
+                        ],
                       );
                     },
                   ),
@@ -265,17 +289,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  File? _image;
-  String? _base64Image;
-
   Future getImage() async {
     var result = await FilePicker.platform.pickFiles(type: FileType.image);
 
     if (result != null && result.files.single.path != null) {
-      _image = File(result.files.single.path!);
-      _base64Image = base64Encode(_image!.readAsBytesSync());
+      setState(() {
+        _image = File(result.files.single.path!);
+        _base64Image = base64Encode(_image!.readAsBytesSync());
+      });
     } else {
-      _base64Image = base64Encode(File('assets/no-image.jpg').readAsBytesSync());
+      setState(() {
+        _base64Image =
+            base64Encode(File('assets/no-image.jpg').readAsBytesSync());
+      });
     }
   }
 }

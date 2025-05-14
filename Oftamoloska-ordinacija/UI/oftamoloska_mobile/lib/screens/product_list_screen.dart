@@ -207,7 +207,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Product Image
+         
           Expanded(
             child: InkWell(
               onTap: () {
@@ -231,7 +231,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ),
             ),
           ),
-          // Product Info
+         
           Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -248,7 +248,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  "${formatNumber(product.cijena)} KM",
+                  "${formatNumber(product.cijena)}",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -258,7 +258,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
               ],
             ),
           ),
-          // Action Buttons
+          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             child: Row(

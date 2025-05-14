@@ -375,7 +375,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Dugme Save
+              
               ElevatedButton(
                 onPressed: () async {
                   if (_karton != null && _zdravstveniKartonId != null) {
@@ -397,15 +397,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 },
                 child: Text('Save'),
               ),
-              SizedBox(width: 20), // Razmak između dugmadi
-              // Dugme Print sa promenjenom bojom
+              SizedBox(width: 20), 
+             
               ElevatedButton(
                 onPressed: () async {
                   final pdf = await generatePDFReport();
                   await _printPDFReport(pdf);
                 },
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(Colors.orange), // Drugačija boja za Print dugme
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.orange), 
                 ),
                 child: Text('Print'),
               ),

@@ -25,8 +25,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
   late RecommendResultProvider _recommendResultProvider;
   SearchResult<Product>? result;
   bool isLoading = true;
-  TextEditingController _ftsController = new TextEditingController();
-  TextEditingController _sifraController = new TextEditingController();
+  TextEditingController _ftsController = TextEditingController();
+  TextEditingController _sifraController = TextEditingController();
   final _formKey = GlobalKey<FormBuilderState>();
 
   String _selectedSortDirection = 'ascending';
@@ -75,6 +75,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       ),
     );
   }
+
   Widget _buildSearch() {
     return FormBuilder(
       key: _formKey,
@@ -107,69 +108,49 @@ class _ProductListScreenState extends State<ProductListScreen> {
               }).toList(),
             ),
             SizedBox(width: 8),
-
-
             ElevatedButton(
               onPressed: () async {
                 try {
-                await _recommendResultProvider.trainData();
+                  await _recommendResultProvider.trainData();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Products have been successfully trained and will be shown to users.'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
                 } catch (e) {
-               String errorMessage = 'An error occurred';
-
-        if (e is Exception && e.toString().isNotEmpty) {
-        final regex = RegExp(r'status code: (.+)$');
-        final match = regex.firstMatch(e.toString());
-
-        if (match != null) {
-          errorMessage = match.group(1)!;
-        }
-      }
-
-       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          duration: Duration(seconds: 3),
-        ),
-      );
-              }
+                  String errorMessage = 'An error occurred';
+                  if (e is Exception && e.toString().isNotEmpty) {
+                    final regex = RegExp(r'status code: (.+)$');
+                    final match = regex.firstMatch(e.toString());
+                    if (match != null) {
+                      errorMessage = match.group(1)!;
+                    }
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
               },
               child: Text("Train Recomm"),
             ),
-
-
-             ElevatedButton(
-              onPressed: () async {
-                try {
-                await _recommendResultProvider.deleteData();
-                } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                content: Text('Error'),
-                duration: Duration(seconds: 2),
-                ),
-               );
-              }
-              },
-              child: Text("Delete Recomm"),
-            ),
-
-
-
-
-
+            SizedBox(width: 8),
             ElevatedButton(
               onPressed: () async {
-                var refresh = await 
-                Navigator.of(context).push(
+                var refresh = await Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => ProductDetailScreen(product: null,),
-                  ));
-                  
-                  if(refresh == 'reload'){
-                    _fetchProducts();
-                  }
+                    builder: (context) => ProductDetailScreen(product: null),
+                  ),
+                );
+                if (refresh == 'reload') {
+                  _fetchProducts();
+                }
               },
-              child: Text("Add"),
+              child: Text("Add product"),
             ),
           ],
         ),
@@ -177,101 +158,99 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
- Widget _buildDataListView() {
-  if (result?.result == null) {
-    return Center(
-      child: Text('No products found.'),
+  Widget _buildDataListView() {
+    if (result?.result == null) {
+      return Center(
+        child: Text('No products found.'),
+      );
+    }
+
+    return Expanded(
+      child: SingleChildScrollView(
+        child: DataTable(
+          columns: [
+            DataColumn(
+              label: Expanded(
+                child: Text(
+                  'Product code',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ),
+            ),
+            DataColumn(
+              label: Expanded(
+                child: Text(
+                  'Product name',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ),
+            ),
+            DataColumn(
+              label: Expanded(
+                child: Text(
+                  'Price',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ),
+            ),
+            DataColumn(
+              label: Expanded(
+                child: Text(
+                  'Image',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ),
+            ),
+            DataColumn(
+              label: Expanded(
+                child: Text(''),
+              ),
+            ),
+          ],
+          rows: result!.result.map(
+            (Product e) => DataRow(
+              onSelectChanged: (selected) async {
+                var refresh = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailScreen(product: e),
+                  ),
+                );
+                if (refresh == 'reload') {
+                  _fetchProducts();
+                }
+              },
+              cells: [
+                DataCell(Text(e.sifra ?? "")),
+                DataCell(Text(e.naziv ?? "")),
+                DataCell(Text(formatNumber(e.cijena))),
+                DataCell(
+                  e.slika != "" && e.slika != null
+                      ? Container(
+                          width: 100,
+                          height: 100,
+                          child: imageFromBase64String(e.slika!),
+                        )
+                      : imageFromBase64String(
+                          base64Encode(File('assets/images/no-image.jpg').readAsBytesSync())),
+                ),
+                DataCell(
+                  IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      _showDeleteConfirmationDialog(e);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ).toList(),
+        ),
+      ),
     );
   }
 
-  return Expanded(
-    child: SingleChildScrollView(
-      child: DataTable(
-        columns: [
-          const DataColumn(
-            label: const Expanded(
-              child: const Text(
-                'Product code',
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ),
-          ),
-          const DataColumn(
-            label: const Expanded(
-              child: const Text(
-                'Product name',
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ),
-          ),
-          const DataColumn(
-            label: const Expanded(
-              child: const Text(
-                'Price',
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ),
-          ),
-          const DataColumn(
-            label: const Expanded(
-              child: const Text(
-                'Image',
-                style: const TextStyle(fontStyle: FontStyle.italic),
-              ),
-            ),
-          ),
-          const DataColumn(
-            label: const Expanded(
-              child: const Text(''),
-            ),
-          ),
-        ],
-        rows: result!.result.map(
-          (Product e) => DataRow(
-            onSelectChanged: (selected) async {
-              //if (selected == true) {
-                var refresh = await
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ProductDetailScreen(product: e),
-                  ));
-
-                  if(refresh == 'reload'){
-                    _fetchProducts();
-                  }
-              //}
-            },
-            cells: [
-              DataCell(Text(e.sifra ?? "")),
-              DataCell(Text(e.naziv ?? "")),
-              DataCell(Text(formatNumber(e.cijena))),
-              DataCell(
-                e.slika != "" || e.slika == null
-                    ? Container(
-                        width: 100,
-                        height: 100,
-                        child: imageFromBase64String(e.slika!),
-                      )
-                    : imageFromBase64String(base64Encode(File('assets/images/no-image.jpg').readAsBytesSync())),//Text(""),
-              ),
-              DataCell(
-                IconButton(
-                  icon: Icon(Icons.delete),
-                 onPressed: () {
-                      _showDeleteConfirmationDialog(e); 
-                    },
-                ),
-              ),
-            ],
-          ),
-        ).toList(),
-      ),
-    ),
-  );
-}
-
   void _showDeleteConfirmationDialog(Product e) {
-       showDialog(
+    showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -280,14 +259,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
               },
               child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
                 await _deleteProduct(e);
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
               },
               child: Text('Delete'),
             ),
@@ -297,12 +276,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
-    Future<void> _deleteProduct(Product product) async {
+  Future<void> _deleteProduct(Product product) async {
     try {
       await _productProvider.delete(product.proizvodId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Product  deleted successfully.'),
+          content: Text('Product deleted successfully.'),
+          backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
       );

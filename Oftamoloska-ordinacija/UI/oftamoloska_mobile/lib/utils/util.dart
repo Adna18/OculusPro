@@ -21,11 +21,14 @@ String base64String(Uint8List data) {
   return base64Encode(data);
 }
 
-String formatNumber(dynamic) {
-  var f = NumberFormat('###,00');
-  if (dynamic == null) {
-    return "";
-  }
-  
-  return f.format(dynamic);
+String formatNumber(dynamic value) {
+  if (value == null) return "";
+
+  final formatter = NumberFormat.currency(
+    locale: 'bs_BA',
+    symbol: 'KM',     
+    decimalDigits: 2,
+  );
+
+  return formatter.format(value).trim();
 }

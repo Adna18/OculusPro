@@ -1,8 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
-
 
 class Authorization {
   static String? username;
@@ -13,12 +11,14 @@ Image imageFromBase64String(String base64Image) {
   return Image.memory(base64Decode(base64Image));
 }
 
+String formatNumber(dynamic value) {
+  if (value == null) return "";
 
-String formatNumber(dynamic) {
-  var f = NumberFormat('###,00');
+  final formatter = NumberFormat.currency(
+    locale: 'bs_BA',
+    symbol: 'KM',     
+    decimalDigits: 2,
+  );
 
-  if (dynamic == null) {
-    return "";
-  }
-  return f.format(dynamic);
+  return formatter.format(value).trim();
 }
