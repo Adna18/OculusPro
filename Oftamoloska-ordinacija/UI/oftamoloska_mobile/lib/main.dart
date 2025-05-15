@@ -462,7 +462,7 @@ class SignUpPage extends StatelessWidget {
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
                                 title: Text("Error"),
-                                content: Text("Incorrect email format."),
+                                content: Text("Incorrect email format.-example@gmail.com"),
                                 actions: [
                                   TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
                                 ],
@@ -473,7 +473,7 @@ class SignUpPage extends StatelessWidget {
                               context: context,
                               builder: (BuildContext context) => AlertDialog(
                                 title: Text("Error"),
-                                content: Text("Incorrect phone format."),
+                                content: Text("Incorrect phone format.- 063519756"),
                                 actions: [
                                   TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
                                 ],

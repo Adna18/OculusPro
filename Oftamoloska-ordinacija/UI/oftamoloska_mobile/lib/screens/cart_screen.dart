@@ -197,7 +197,7 @@ Widget _buildBuyButton() {
       
       setState(() {});
 
-    /* Navigator.of(context).pushReplacement(
+     Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => PaymentScreen(
             items: items,
@@ -205,7 +205,7 @@ Widget _buildBuyButton() {
             narudzbaId: response.narudzbaId,
             iznos:response.iznos
           )),
-      );*/
+      );
     },
   );
 }
