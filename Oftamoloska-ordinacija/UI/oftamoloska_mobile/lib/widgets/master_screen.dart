@@ -98,13 +98,11 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   }
 
   
-  void _logout() {
-    final korisniciProvider = Provider.of<KorisniciProvider>(context, listen: false);
-    korisniciProvider.logout();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-      (route) => false,
-    );
-  }
+void _logout() {
+  final korisniciProvider = Provider.of<KorisniciProvider>(context, listen: false);
+  korisniciProvider.logout();
+
+  Navigator.of(context).popUntil((route) => route.isFirst);
+}
+
 }

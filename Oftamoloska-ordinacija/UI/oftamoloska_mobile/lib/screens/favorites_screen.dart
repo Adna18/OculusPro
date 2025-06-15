@@ -81,25 +81,43 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   final product = snapshot.data!;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(
-                            base64Decode(product.slika!),
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                          ),
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.memory(
+                                base64Decode(product.slika!),
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                product.naziv ?? 'No name',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              color: Colors.red,
+                              tooltip: "Remove from favorites",
+                              onPressed: () => _deleteFavorite(favorite.omiljeniProizvodId),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          color: Colors.red,
-                          tooltip: "Remove from favorites",
-                          onPressed: () => _deleteFavorite(favorite.omiljeniProizvodId),
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 }
@@ -116,10 +134,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       await _favoritesProvider.delete(omiljeniProizvodId);
       await _fetchFavorites();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Product successfully removed from favorites."),
-        backgroundColor: Colors.green,
+        const SnackBar(
+          content: Text("Product successfully removed from favorites."),
+          backgroundColor: Colors.green,
         ),
-        
       );
     } catch (e) {
       print("Greška prilikom brisanja: $e");

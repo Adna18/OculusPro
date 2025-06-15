@@ -73,14 +73,14 @@ class _DateTestState extends State<DateTest> {
       ),
       body: Column(
         children: [
-          // Standard calendar picker
+        
           CalendarDatePicker(
             initialDate: _focusedDate,
             firstDate: DateTime.now(),
             lastDate: DateTime.now().add(const Duration(days: 365)),
             onDateChanged: _onDatePicked,
           ),
-          // Show chosen date
+          
           if (_pickedDate != null) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -89,7 +89,7 @@ class _DateTestState extends State<DateTest> {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            // Horizontal chips
+         
             SizedBox(
               height: 50,
               child: ListView.builder(
@@ -118,7 +118,7 @@ class _DateTestState extends State<DateTest> {
               ),
             ),
             const Spacer(),
-            // Save button
+            
             Padding(
               padding: const EdgeInsets.all(16),
               child: ElevatedButton(

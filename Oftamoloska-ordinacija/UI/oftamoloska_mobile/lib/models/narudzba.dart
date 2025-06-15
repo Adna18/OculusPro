@@ -10,7 +10,9 @@ class Narudzba{
   DateTime? datum; 
   double? iznos;
 
-  Narudzba(this.narudzbaId, this.brojNarudzbe, this.status, this.datum, this.iznos);
+ 
+
+  Narudzba(this.narudzbaId, this.brojNarudzbe, this.status, this.datum, this.iznos,);
 
   factory Narudzba.fromJson(Map<String, dynamic> json) => _$NarudzbaFromJson(json);
 

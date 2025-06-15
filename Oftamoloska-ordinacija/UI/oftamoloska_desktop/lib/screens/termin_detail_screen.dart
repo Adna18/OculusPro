@@ -224,7 +224,7 @@ class _TerminDetailScreenState extends State<TerminDetailScreen> {
       await _terminiProvider.update(widget.termin!.terminId!, widget.termin!);
       Navigator.pop(context, widget.termin);
     } else {
-      // get doctor id by Authorization.username
+     
       final doctors = await _korisniciProvider.get(filter: {'tipKorisnika': 'doktor'});
       final doc = doctors.result.firstWhere((u) => u.username == Authorization.username).korisnikId!;
       final newTermin = Termin(null, doc, _selectedPatient, _modifiedDatum);

@@ -15,7 +15,18 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen> {
   final OrdersProvider _ordersProvider = OrdersProvider();
   List<Narudzba> _narudzba = [];
+  List<Narudzba> _filteredNarudzba = [];
   bool isLoading = true;
+
+ 
+  String? _selectedStatus = 'All';
+
+  final List<String> _statusOptions = [
+    'All',
+    'Pending',
+    'Completed',
+    'Cancelled',
+  ];
 
   @override
   void initState() {
@@ -28,6 +39,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       var result = await _ordersProvider.get();
       setState(() {
         _narudzba = result.result;
+        _applyFilter();
         isLoading = false;
       });
     } catch (e) {
@@ -38,16 +50,54 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
   }
 
+  void _applyFilter() {
+    if (_selectedStatus == null || _selectedStatus == 'All') {
+      _filteredNarudzba = List.from(_narudzba);
+    } else {
+      _filteredNarudzba = _narudzba
+          .where((n) => n.status != null && n.status == _selectedStatus)
+          .toList();
+    }
+  }
+
+  void _onStatusChanged(String? newValue) {
+    setState(() {
+      _selectedStatus = newValue;
+      _applyFilter();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Orders'),
+        title: const Text('Orders'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0), // Zadržavamo padding koji već koristiš
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+           
+            Row(
+              children: [
+                const Text(
+                  'Filter by status: ',
+                  style: TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 12),
+                DropdownButton<String>(
+                  value: _selectedStatus,
+                  items: _statusOptions
+                      .map((status) => DropdownMenuItem(
+                            value: status,
+                            child: Text(status),
+                          ))
+                      .toList(),
+                  onChanged: _onStatusChanged,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             _buildDataListView(),
           ],
         ),
@@ -57,15 +107,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget _buildDataListView() {
     if (isLoading) {
-      return Expanded(
+      return const Expanded(
         child: Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
 
-    if (_narudzba.isEmpty) {
-      return Expanded(
+    if (_filteredNarudzba.isEmpty) {
+      return const Expanded(
         child: Center(
           child: Text(
             'No orders found.',
@@ -77,15 +127,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     return Expanded(
       child: ListView.builder(
-        itemCount: _narudzba.length,
+        itemCount: _filteredNarudzba.length,
         itemBuilder: (context, index) {
-          var narudzba = _narudzba[index];
+          var narudzba = _filteredNarudzba[index];
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
               child: Card(
-                elevation: 4, // Veća sjenka za bolji kontrast
+                elevation: 4,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -94,14 +144,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   onTap: () async {
                     var refresh = await Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => OrderDetailScreen(narudzba: narudzba),
+                        builder: (context) =>
+                            OrderDetailScreen(narudzba: narudzba),
                       ),
                     );
                     if (refresh == 'reload') {
                       _fetchNarudzbe();
                     }
                   },
-                  leading: Icon(Icons.shopping_cart, color: Colors.green[800]), // Ikona
+                  leading: Icon(Icons.shopping_cart, color: Colors.green[800]),
                   title: Text(
                     narudzba.brojNarudzbe ?? '',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -112,15 +163,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Total: ${narudzba.iznos.toString()} KM',
-                        style: TextStyle(fontSize: 16, color: Colors.green[700]),
+                        'Status: ${narudzba.status ?? 'Unknown'}',
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
                       ),
-                      SizedBox(height: 8),
+                      Text(
+                        'Total: ${narudzba.iznos != null ? narudzba.iznos!.toStringAsFixed(2) : '0.00'} KM',
+                        style:
+                            TextStyle(fontSize: 16, color: Colors.green[700]),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         'Created on: ${narudzba.datum != null ? DateFormat('yyyy-MM-dd').format(narudzba.datum!) : 'Unknown Date'}',
-                        style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                        style: const TextStyle(
+                            fontStyle: FontStyle.italic, color: Colors.grey),
                       ),
                     ],
                   ),

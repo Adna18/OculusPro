@@ -14,6 +14,7 @@ Korisnik _$KorisnikFromJson(Map<String, dynamic> json) => Korisnik(
       json['email'] as String?,
       json['telefon'] as String?,
       json['adresa'] as String?,
+      (json['tipKorisnikaId'] as num?)?.toInt(),
       json['datumRodjenja'] == null
           ? null
           : DateTime.parse(json['datumRodjenja'] as String),
@@ -30,6 +31,7 @@ Map<String, dynamic> _$KorisnikToJson(Korisnik instance) => <String, dynamic>{
       'email': instance.email,
       'telefon': instance.telefon,
       'adresa': instance.adresa,
+      'tipKorisnikaId': instance.tipKorisnikaId,
       'datumRodjenja': instance.datumRodjenja?.toIso8601String(),
       'tipKorisnika': instance.tipKorisnika,
     };

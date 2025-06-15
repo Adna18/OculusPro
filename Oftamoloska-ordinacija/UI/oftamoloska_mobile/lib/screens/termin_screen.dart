@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:oftamoloska_mobile/models/termin.dart';
+import 'package:oftamoloska_mobile/providers/korisnik_provider.dart';
 import 'package:oftamoloska_mobile/providers/termini_provider.dart';
 import 'package:oftamoloska_mobile/screens/termin_detail_screen.dart';
-import 'package:oftamoloska_mobile/models/termin.dart';
+import 'package:oftamoloska_mobile/screens/termin_info_screen.dart';
+import '../models/korisnik.dart';
 import '../utils/util.dart';
 
 class TerminiScreen extends StatefulWidget {
@@ -14,6 +17,7 @@ class TerminiScreen extends StatefulWidget {
 
 class _TerminiScreenState extends State<TerminiScreen> {
   final TerminiProvider _terminiProvider = TerminiProvider();
+  final KorisniciProvider _korisniciProvider = KorisniciProvider();
   List<Termin> _termini = [];
   bool isLoading = true;
 
@@ -42,6 +46,16 @@ class _TerminiScreenState extends State<TerminiScreen> {
     }
   }
 
+  Future<Korisnik?> _fetchKorisnik(int? korisnikId) async {
+    if (korisnikId == null) return null;
+    try {
+      return await _korisniciProvider.getById(korisnikId);
+    } catch (e) {
+      print("Greška pri dohvaćanju korisnika: $e");
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,32 +73,65 @@ class _TerminiScreenState extends State<TerminiScreen> {
                       ? Center(child: Text('There are no appointments.'))
                       : ListView.separated(
                           itemCount: _termini.length,
-                          separatorBuilder: (context, index) => Divider(height: 16),
+                          separatorBuilder: (context, index) =>
+                              Divider(height: 16),
                           itemBuilder: (context, index) {
                             final termin = _termini[index];
-                            return Card(
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: ListTile(
-                                contentPadding: EdgeInsets.all(16),
-                                title: Text(
-                                  'Doctor ID: ${termin.korisnikIdDoktor}',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(height: 8),
-                                    Text('Patient ID: ${termin.korisnikIdPacijent}'),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Date: ${DateFormat('dd.MM.yyyy - HH:mm').format(termin.datum!)}',
+                            return FutureBuilder(
+                              future: Future.wait([
+                                _fetchKorisnik(termin.korisnikIdDoktor),
+                                _fetchKorisnik(termin.korisnikIdPacijent),
+                              ]),
+                              builder: (context,
+                                  AsyncSnapshot<List<Korisnik?>> snapshot) {
+                                if (!snapshot.hasData) {
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                }
+
+                                final doktor = snapshot.data![0];
+                                final pacijent = snapshot.data![1];
+
+                                return Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListTile(
+                                    contentPadding: EdgeInsets.all(16),
+                                    title: Text(
+                                      'Doctor: ${doktor != null ? "${doktor.ime} ${doktor.prezime}" : "Unknown"}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
                                     ),
-                                  ],
-                                ),
-                              ),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        SizedBox(height: 8),
+                                        Text(
+                                          'Patient: ${pacijent != null ? "${pacijent.ime} ${pacijent.prezime}" : "Unknown"}',
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'Date: ${DateFormat('dd.MM.yyyy - HH:mm').format(termin.datum!)}',
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: IconButton(
+                                       icon: const Icon(Icons.info, color: Colors.blue),
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                TerminInfoScreen(termin: termin),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
                         ),
@@ -114,7 +161,8 @@ class _TerminiScreenState extends State<TerminiScreen> {
 
     if (modifiedTermin != null && modifiedTermin is Termin) {
       setState(() {
-        int index = _termini.indexWhere((element) => element.terminId == modifiedTermin.terminId);
+        int index = _termini
+            .indexWhere((element) => element.terminId == modifiedTermin.terminId);
         if (index != -1) {
           _termini[index] = modifiedTermin;
         } else {

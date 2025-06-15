@@ -3,6 +3,7 @@ import 'package:oftamoloska_desktop/providers/novosti_provider.dart';
 import 'package:oftamoloska_desktop/providers/orders_provider.dart';
 import 'package:oftamoloska_desktop/providers/product_provider.dart';
 import 'package:oftamoloska_desktop/providers/recommend_result_provider.dart';
+import 'package:oftamoloska_desktop/providers/recenzija_provider.dart';
 import 'package:oftamoloska_desktop/providers/stavka_narudzbe_provider.dart';
 import 'package:oftamoloska_desktop/providers/termini_provider.dart';
 import 'package:oftamoloska_desktop/providers/vrste_proizvoda_provider.dart';
@@ -61,6 +62,8 @@ class MyMaterialApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ZdravstveniKartonProvider()),
         ChangeNotifierProvider(create: (_) => RecommendResultProvider()),
         ChangeNotifierProvider(create: (_) => StavkaNarudzbeProvider()),
+        ChangeNotifierProvider(create: (_) => RecenzijaProvider()),
+        
       ],
      child: MaterialApp(
   title: 'OculusPro',
@@ -71,7 +74,7 @@ class MyMaterialApp extends StatelessWidget {
       primary: Colors.green[800]!,
       secondary: Colors.green[600]!,
     ),
-    fontFamily: 'Roboto', // možeš promijeniti ako imaš drugi font
+    fontFamily: 'Roboto', 
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.green[800],
       foregroundColor: Colors.white,

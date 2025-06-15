@@ -1,14 +1,17 @@
 import 'package:oftamoloska_desktop/models/narudzba.dart';
+import 'package:oftamoloska_desktop/models/korisnik.dart';
 import 'package:oftamoloska_desktop/models/stavkaNarudzbe.dart';
+import 'package:oftamoloska_desktop/models/product.dart';
+import 'package:oftamoloska_desktop/models/transakcija.dart';
+import 'package:oftamoloska_desktop/providers/korisnik_provider.dart';
 import 'package:oftamoloska_desktop/providers/orders_provider.dart';
 import 'package:oftamoloska_desktop/providers/stavka_narudzbe_provider.dart';
+import 'package:oftamoloska_desktop/providers/product_provider.dart';
+import 'package:oftamoloska_desktop/providers/transakcija_provider.dart';
 import 'package:oftamoloska_desktop/widgets/master_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:provider/provider.dart';
-
-import '../main.dart';
-import '../providers/product_provider.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final Narudzba? narudzba;
@@ -24,22 +27,54 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   late OrdersProvider _ordersProvider;
   late StavkaNarudzbeProvider _stavkaProvider;
   late ProductProvider _productProvider;
+  late KorisniciProvider _korisniciProvider;
+  final TransakcijaProvider _transakcijaProvider = TransakcijaProvider();
+  List<Transakcija> _transakcije = [];
+
   List<StavkaNarudzbe> _stavke = [];
+  Korisnik? _korisnik;
   bool _loading = true;
+  bool _loadingKorisnik = true;
 
   @override
   void initState() {
     super.initState();
+
     _initialValue = {
       'brojNarudzbe': widget.narudzba?.brojNarudzbe,
       'status': widget.narudzba?.status,
-      'datum': widget.narudzba?.datum.toString(),
-      'iznos': widget.narudzba?.iznos.toString(),
+      'datum': (widget.narudzba?.datum != null)
+          ? _formatDate(widget.narudzba!.datum!)
+          : '',
+      'iznos': widget.narudzba?.iznos != null
+          ? widget.narudzba!.iznos!.toStringAsFixed(2)
+          : '',
     };
+
     _ordersProvider = context.read<OrdersProvider>();
     _stavkaProvider = StavkaNarudzbeProvider();
     _productProvider = ProductProvider();
+    _korisniciProvider = KorisniciProvider();
+
     _loadItems();
+    _loadKorisnik();
+    _fetchTransakcije(); 
+  }
+
+  Future<void> _fetchTransakcije() async {
+    var data = await _transakcijaProvider.get();
+    setState(() {
+      _transakcije = data.result
+          .where(
+              (transakcija) => transakcija.narudzbaId == widget.narudzba?.narudzbaId)
+          .toList();
+    });
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year.toString().padLeft(4, '0')}-"
+        "${date.month.toString().padLeft(2, '0')}-"
+        "${date.day.toString().padLeft(2, '0')}";
   }
 
   Future<void> _loadItems() async {
@@ -59,19 +94,84 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  Future<void> _loadKorisnik() async {
+    if (widget.narudzba?.korisnik != null) {
+      setState(() {
+        _korisnik = widget.narudzba!.korisnik;
+        _loadingKorisnik = false;
+      });
+      return;
+    }
+    if (widget.narudzba?.korisnikId == null) {
+      setState(() {
+        _loadingKorisnik = false;
+      });
+      return;
+    }
+    try {
+      final k = await _korisniciProvider.getById(widget.narudzba!.korisnikId!);
+      setState(() {
+        _korisnik = k;
+        _loadingKorisnik = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingKorisnik = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
       title: "Order ${widget.narudzba?.brojNarudzbe ?? ''}",
-      child: _loading
-          ? Center(child: CircularProgressIndicator())
+      child: (_loading || _loadingKorisnik)
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   _buildSectionCard(
                     title: "Basic Info",
-                    child: _buildBasicInfo(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_korisnik != null) ...[
+                          Text(
+                            "Korisnik: ${_korisnik!.ime} ${_korisnik!.prezime}",
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          if (_korisnik!.adresa != null &&
+                              _korisnik!.adresa!.isNotEmpty)
+                            Text(
+                              "Adresa: ${_korisnik!.adresa}",
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          if (_korisnik!.telefon != null &&
+                              _korisnik!.telefon!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                "Telefon: ${_korisnik!.telefon}",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          if (_korisnik!.email != null &&
+                              _korisnik!.email!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                "Email: ${_korisnik!.email}",
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                        ],
+                        _buildBasicInfo(),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _buildSectionCard(
@@ -130,10 +230,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             decoration: const InputDecoration(labelText: "Order Number"),
           ),
           const SizedBox(height: 12),
-          FormBuilderTextField(
+          FormBuilderDropdown<String>(
             name: 'status',
-            decoration: const InputDecoration(labelText: "Status"),
+            decoration: const InputDecoration(
+              labelText: 'Status',
+              border: OutlineInputBorder(),
+            ),
             validator: _validateStatus,
+            items: ['Pending', 'Completed', 'Cancelled']
+                .map((status) => DropdownMenuItem(
+                      value: status,
+                      child: Text(status),
+                    ))
+                .toList(),
           ),
           const SizedBox(height: 12),
           FormBuilderTextField(
@@ -147,6 +256,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             readOnly: true,
             decoration: const InputDecoration(labelText: "Order Date"),
           ),
+          const SizedBox(height: 12),
+          if (_transakcije.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Transaction Status: ${_transakcije.first.statusTransakcije ?? 'Unknown'}",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blueGrey,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -173,29 +296,36 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
     return Column(
       children: _stavke.map((s) {
-        return FutureBuilder<String>(
-          future: _getProductName(s.proizvodId),
+        if (s.proizvodId == null) {
+          return ListTile(
+            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            leading: CircleAvatar(child: Text(s.kolicina.toString())),
+            title: const Text('Proizvod ID nije dostupan'),
+          );
+        }
+        return FutureBuilder<Product>(
+          future: _productProvider.getById(s.proizvodId!),
           builder: (c, snap) {
-            final name = snap.data ?? '...';
+            if (!snap.hasData) {
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                leading: CircleAvatar(child: Text(s.kolicina.toString())),
+                title: const Text('Učitavanje...'),
+              );
+            }
+            final product = snap.data!;
+            final cijena = product.cijena ?? 0.0;
             return ListTile(
               contentPadding: const EdgeInsets.symmetric(vertical: 4),
               leading: CircleAvatar(child: Text(s.kolicina.toString())),
-              title: Text(name),
+              title: Text(product.naziv ?? 'Bez naziva'),
+              subtitle: Text(
+                  'Cijena: ${cijena.toStringAsFixed(2)} KM\nKoličina: ${s.kolicina}'),
             );
           },
         );
       }).toList(),
     );
-  }
-
-  Future<String> _getProductName(int? id) async {
-    if (id == null) return 'N/A';
-    try {
-      final p = await _productProvider.getById(id);
-      return p.naziv ?? 'N/A';
-    } catch (_) {
-      return 'N/A';
-    }
   }
 
   void _onSave() async {
@@ -222,8 +352,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           );
           return;
         }
-        await _ordersProvider.update(
-            widget.narudzba!.narudzbaId!, data);
+        await _ordersProvider.update(widget.narudzba!.narudzbaId!, data);
       }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

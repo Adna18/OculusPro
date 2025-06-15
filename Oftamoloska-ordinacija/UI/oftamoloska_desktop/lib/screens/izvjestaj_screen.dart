@@ -127,7 +127,7 @@ class _IzvjestajScreenState extends State<IzvjestajScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
-          // Patient & Type selectors
+        
           Card(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -166,7 +166,7 @@ class _IzvjestajScreenState extends State<IzvjestajScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          // Content area
+          
           Expanded(
             child: Card(
               child: Padding(

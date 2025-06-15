@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:oftamoloska_desktop/models/korisnik.dart';
 
 part 'narudzba.g.dart';
 
@@ -9,8 +10,11 @@ class Narudzba{
   String? status; 
   DateTime? datum; 
   double? iznos;
+  int? korisnikId;
+  Korisnik? korisnik;
+  
 
-  Narudzba(this.narudzbaId, this.brojNarudzbe, this.status, this.datum, this.iznos);
+  Narudzba(this.narudzbaId, this.brojNarudzbe, this.status, this.datum, this.iznos, this.korisnikId, [this.korisnik]);
 
   factory Narudzba.fromJson(Map<String, dynamic> json) => _$NarudzbaFromJson(json);
 

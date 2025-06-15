@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:oftamoloska_desktop/models/product.dart';
 import 'package:oftamoloska_desktop/models/SearchResult.dart';
 import 'package:oftamoloska_desktop/models/vrste_proizvoda.dart';
+import 'package:oftamoloska_desktop/models/recenzija.dart';  
 import 'package:oftamoloska_desktop/providers/product_provider.dart';
 import 'package:oftamoloska_desktop/providers/vrste_proizvoda_provider.dart';
+import 'package:oftamoloska_desktop/providers/recenzija_provider.dart';  
 import 'package:oftamoloska_desktop/widgets/master_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -25,8 +27,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Map<String, dynamic> _initialValue = {};
   late VrsteProizvodaProvider _vrsteProizvodaProvider;
   late ProductProvider _productProvider;
+  late RecenzijaProvider _recenzijaProvider;  
 
   SearchResult<VrsteProizvoda>? VrsteProizvodaResult;
+  List<Recenzija> _recenzije = [];  
   bool isLoading = true;
 
   File? _image;
@@ -45,12 +49,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     _vrsteProizvodaProvider = context.read<VrsteProizvodaProvider>();
     _productProvider = context.read<ProductProvider>();
+    _recenzijaProvider = RecenzijaProvider();  
 
     initForm();
   }
 
   Future initForm() async {
     VrsteProizvodaResult = await _vrsteProizvodaProvider.get();
+    
+    
+    if (widget.product?.proizvodId != null) {
+      var result = await _recenzijaProvider.get(filter: {
+        'proizvodId': widget.product!.proizvodId
+      });
+      _recenzije = result.result;
+    }
+
     setState(() {
       isLoading = false;
     });
@@ -62,6 +76,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       child: Column(
         children: [
           isLoading ? Container() : _buildForm(),
+          SizedBox(height: 20),  
+          _buildRecenzije(),       
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -246,62 +262,73 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ],
             ),
             SizedBox(height: 16),
+          
             Row(
               children: [
                 Expanded(
-                  child: FormBuilderField(
-                    name: 'imageId',
-                    builder: (field) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          InputDecorator(
-                            decoration: InputDecoration(
-                              label: Text('Select image'),
-                              errorText: field.errorText,
-                              border: OutlineInputBorder(),
-                            ),
-                            child: ListTile(
-                              leading: Icon(Icons.photo),
-                              title: Text('Tap to select image'),
-                              trailing: Icon(Icons.file_upload),
-                              onTap: getImage,
-                            ),
-                          ),
-                          if (_image != null) ...[
-                            SizedBox(height: 10),
-                            Image.file(
-                              _image!,
-                              height: 150,
-                              fit: BoxFit.cover,
-                            ),
-                          ]
-                        ],
-                      );
-                    },
+                  child: FormBuilderTextField(
+                    decoration: InputDecoration(labelText: "Select image"),
+                    name: 'slika',
                   ),
                 ),
+                SizedBox(width: 10),
+                ElevatedButton(
+                    onPressed: () async {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(
+                        type: FileType.image,
+                      );
+                      if (result != null) {
+                        File file = File(result.files.single.path!);
+                        setState(() {
+                          _image = file;
+                          _base64Image = base64Encode(file.readAsBytesSync());
+                        });
+                      }
+                    },
+                    child: Text("Select image")),
               ],
             ),
+          
+            if (_image != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 10.0),
+                child: Center(
+                  child: Image.file(
+                    _image!,
+                    width: 150,
+                    height: 150,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Future getImage() async {
-    var result = await FilePicker.platform.pickFiles(type: FileType.image);
-
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        _image = File(result.files.single.path!);
-        _base64Image = base64Encode(_image!.readAsBytesSync());
-      });
-    } else {
-      setState(() {
-        _base64Image =
-            base64Encode(File('assets/no-image.jpg').readAsBytesSync());
-      });
+  Widget _buildRecenzije() {
+    if (_recenzije.isEmpty) {
+      return Text("Nema recenzija za ovaj proizvod.");
     }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Recenzije:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        SizedBox(height: 10),
+        ..._recenzije.map((rec) {
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 6),
+            child: ListTile(
+              title: Text(rec.sadrzaj ?? ""),
+              subtitle: Text("Datum: ${rec.datum?.toLocal().toString().split(" ")[0] ?? ""}"),
+              leading: Icon(Icons.comment),
+            ),
+          );
+        }).toList(),
+
+      ],
+    );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:oftamoloska_desktop/screens/product_list_screen.dart';
 import 'package:oftamoloska_desktop/screens/home_page_screen.dart';
 import 'package:oftamoloska_desktop/screens/termin_screen.dart';
+import 'package:oftamoloska_desktop/screens/transakcija_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,6 +9,7 @@ import '../main.dart';
 import '../providers/korisnik_provider.dart';
 import '../screens/izvjestaj_screen.dart';
 import '../screens/orders_screen.dart';
+import '../screens/pacijenti_screen.dart';
 
 class MasterScreenWidget extends StatefulWidget {
   final Widget? child;
@@ -85,6 +87,20 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
                 title: Text('Appointments', style: textStyle),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const TerminiScreen()),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.person, color: iconColor),
+                title: Text('Patients', style: textStyle),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PacijentiScreen()),
+                ),
+              ),
+              ListTile(
+                leading: Icon(Icons.monetization_on, color: iconColor), 
+                title: Text('Transactions', style: textStyle),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TransakcijeScreen()), 
                 ),
               ),
               ListTile(

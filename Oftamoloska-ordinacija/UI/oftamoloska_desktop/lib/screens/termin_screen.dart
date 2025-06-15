@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:oftamoloska_desktop/models/termin.dart';
 import 'package:intl/intl.dart';
 import 'package:oftamoloska_desktop/providers/termini_provider.dart';
+import 'package:oftamoloska_desktop/providers/korisnik_provider.dart'; 
 import 'package:oftamoloska_desktop/screens/termin_detail_screen.dart';
 import '../utils/util.dart';
+import '../models/korisnik.dart'; 
 
 class TerminiScreen extends StatefulWidget {
   const TerminiScreen({Key? key}) : super(key: key);
@@ -14,8 +16,14 @@ class TerminiScreen extends StatefulWidget {
 
 class _TerminiScreenState extends State<TerminiScreen> {
   final TerminiProvider _terminiProvider = TerminiProvider();
+  final KorisniciProvider _korisniciProvider = KorisniciProvider();
+
   List<Termin> _termini = [];
+  List<Termin> _filteredTermini = [];
+  Map<int, Korisnik> _korisniciMap = {};
   bool _isLoading = true;
+
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -28,14 +36,61 @@ class _TerminiScreenState extends State<TerminiScreen> {
       final result = await _terminiProvider.get(filter: {
         'doktor': Authorization.username,
       });
+
+      _termini = result.result;
+
+      await _loadKorisniciForTermini(_termini);
+
+      _applyFilter();
+
       setState(() {
-        _termini = result.result;
         _isLoading = false;
       });
     } catch (e) {
       print(e);
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadKorisniciForTermini(List<Termin> termini) async {
+    final ids = <int>{};
+    for (var t in termini) {
+      if (t.korisnikIdDoktor != null) ids.add(t.korisnikIdDoktor!);
+      if (t.korisnikIdPacijent != null) ids.add(t.korisnikIdPacijent!);
+    }
+
+    for (var id in ids) {
+      try {
+        final korisnik = await _korisniciProvider.getById(id);
+        if (korisnik != null) {
+          _korisniciMap[id] = korisnik;
+        }
+      } catch (e) {
+        print('Greška pri dohvaćanju korisnika id=$id: $e');
+      }
+    }
+  }
+
+  void _applyFilter() {
+    if (_searchQuery.isEmpty) {
+      _filteredTermini = List.from(_termini);
+    } else {
+      final query = _searchQuery.toLowerCase();
+      _filteredTermini = _termini.where((t) {
+        final doktor = _korisniciMap[t.korisnikIdDoktor];
+        final pacijent = _korisniciMap[t.korisnikIdPacijent];
+
+        final doktorImePrezime = doktor != null
+            ? '${doktor.ime} ${doktor.prezime}'.toLowerCase()
+            : '';
+        final pacijentImePrezime = pacijent != null
+            ? '${pacijent.ime} ${pacijent.prezime}'.toLowerCase()
+            : '';
+
+        return doktorImePrezime.contains(query) || pacijentImePrezime.contains(query);
+      }).toList();
+    }
+    setState(() {});
   }
 
   @override
@@ -46,14 +101,36 @@ class _TerminiScreenState extends State<TerminiScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _termini.isEmpty
-              ? const Center(child: Text('No appointments found.'))
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _termini.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (ctx, i) => _buildCard(_termini[i]),
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Search by doctor or patient name',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      _searchQuery = value;
+                      _applyFilter();
+                    },
+                  ),
                 ),
+                Expanded(
+                  child: _filteredTermini.isEmpty
+                      ? const Center(child: Text('No appointments found.'))
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _filteredTermini.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          itemBuilder: (ctx, i) => _buildCard(_filteredTermini[i]),
+                        ),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateDetail(null),
         child: const Icon(Icons.add),
@@ -62,6 +139,9 @@ class _TerminiScreenState extends State<TerminiScreen> {
   }
 
   Widget _buildCard(Termin t) {
+    final doktor = _korisniciMap[t.korisnikIdDoktor];
+    final pacijent = _korisniciMap[t.korisnikIdPacijent];
+
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -74,11 +154,13 @@ class _TerminiScreenState extends State<TerminiScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Dr: ${t.korisnikIdDoktor}',
+                    'Dr: ${doktor != null ? '${doktor.ime} ${doktor.prezime}' : 'Unknown'}',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  Text('Patient: ${t.korisnikIdPacijent}'),
+                  Text(
+                    'Patient: ${pacijent != null ? '${pacijent.ime} ${pacijent.prezime}' : 'Unknown'}',
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     DateFormat('dd.MM.yyyy – HH:mm').format(t.datum!),
@@ -121,7 +203,7 @@ class _TerminiScreenState extends State<TerminiScreen> {
           _termini.add(modified);
         }
       });
-    }
+      _applyFilter();  }
   }
 
   void _confirmDelete(Termin t) {
@@ -152,6 +234,7 @@ class _TerminiScreenState extends State<TerminiScreen> {
     try {
       await _terminiProvider.delete(t.terminId);
       setState(() => _termini.removeWhere((x) => x.terminId == t.terminId));
+      _applyFilter();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Appointment completed.')),
       );

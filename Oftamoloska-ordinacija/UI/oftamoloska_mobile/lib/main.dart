@@ -1,4 +1,4 @@
- import 'package:oftamoloska_mobile/models/recommendResult.dart';
+import 'package:oftamoloska_mobile/models/recommendResult.dart';
 import 'package:oftamoloska_mobile/providers/cart_provider.dart';
 import 'package:oftamoloska_mobile/providers/dojam_provider.dart';
 import 'package:oftamoloska_mobile/providers/favorites_provider.dart';
@@ -16,6 +16,7 @@ import 'package:oftamoloska_mobile/screens/product_list_screen.dart';
 import 'package:oftamoloska_mobile/utils/util.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 void main() {
@@ -292,25 +293,117 @@ class LoginPage extends StatelessWidget {
   }
 }
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
   SignUpPage({super.key});
 
-  TextEditingController _firstnameController = new TextEditingController();
-  TextEditingController _lastnameController = new TextEditingController();
-  TextEditingController _usernameController = new TextEditingController();
-  TextEditingController _emailController = new TextEditingController();
-  TextEditingController _phoneController = new TextEditingController();
-  TextEditingController _addressController = new TextEditingController();
-  TextEditingController _genderController = new TextEditingController();
-  TextEditingController _passwordController = new TextEditingController();
-  TextEditingController _confirmPasswordController = new TextEditingController();
+  @override
+  _SignUpPageState createState() => _SignUpPageState();
+}
+
+class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController _firstnameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   late KorisniciProvider _korisniciProvider;
 
+  String? _firstNameError;
+  String? _lastNameError;
+  String? _usernameError;
+  String? _emailError;
+  String? _phoneError;
+  String? _addressError;
+  String? _genderError;
+  String? _passwordError;
+  String? _confirmPasswordError;
+
+  @override
+  void initState() {
+    super.initState();
+    _korisniciProvider = Provider.of<KorisniciProvider>(context, listen: false);
+  }
+
+  void _validateFields() {
+    setState(() {
+      
+      _firstNameError = null;
+      _lastNameError = null;
+      _usernameError = null;
+      _emailError = null;
+      _phoneError = null;
+      _addressError = null;
+      _genderError = null;
+      _passwordError = null;
+      _confirmPasswordError = null;
+
+      
+      if (_firstnameController.text.isEmpty) {
+        _firstNameError = 'First name is required';
+      }
+      if (_lastnameController.text.isEmpty) {
+        _lastNameError = 'Last name is required';
+      }
+      if (_usernameController.text.isEmpty) {
+        _usernameError = 'Username is required';
+      }
+      if (_emailController.text.isEmpty) {
+        _emailError = 'Email is required';
+      } else if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailController.text)) {
+        _emailError = 'Incorrect email format (example@gmail.com)';
+      }
+      if (_phoneController.text.isEmpty) {
+        _phoneError = 'Phone is required';
+      } else if (!RegExp(r"^(?:\+?\d{10}|\d{9})$").hasMatch(_phoneController.text)) {
+        _phoneError = 'Incorrect phone format (063519756)';
+      }
+      if (_addressController.text.isEmpty) {
+        _addressError = 'Address is required';
+      }
+      if (_genderController.text.isEmpty) {
+        _genderError = 'Gender is required';
+      } else if (_genderController.text != '1' && _genderController.text != '2') {
+        _genderError = 'Please enter 1 (Male) or 2 (Female)';
+      }
+      if (_passwordController.text.isEmpty) {
+        _passwordError = 'Password is required';
+      }
+      if (_confirmPasswordController.text.isEmpty) {
+        _confirmPasswordError = 'Please confirm your password';
+      } else if (_passwordController.text != _confirmPasswordController.text) {
+        _confirmPasswordError = 'Passwords do not match';
+      }
+    });
+  }
+
+  bool _isFormValid() {
+    return _firstNameError == null &&
+        _lastNameError == null &&
+        _usernameError == null &&
+        _emailError == null &&
+        _phoneError == null &&
+        _addressError == null &&
+        _genderError == null &&
+        _passwordError == null &&
+        _confirmPasswordError == null &&
+        _firstnameController.text.isNotEmpty &&
+        _lastnameController.text.isNotEmpty &&
+        _usernameController.text.isNotEmpty &&
+        _emailController.text.isNotEmpty &&
+        _phoneController.text.isNotEmpty &&
+        _addressController.text.isNotEmpty &&
+        _genderController.text.isNotEmpty &&
+        _passwordController.text.isNotEmpty &&
+        _confirmPasswordController.text.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
-    _korisniciProvider = Provider.of<KorisniciProvider>(context, listen: false);
-
     return Scaffold(
       appBar: AppBar(title: Text("Sign Up")),
       body: Center(
@@ -342,144 +435,100 @@ class SignUpPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: "First Name",
                         prefixIcon: Icon(Icons.person),
+                        errorText: _firstNameError,
                       ),
                       controller: _firstnameController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Last Name",
                         prefixIcon: Icon(Icons.person),
+                        errorText: _lastNameError,
                       ),
                       controller: _lastnameController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Username",
                         prefixIcon: Icon(Icons.account_circle),
+                        errorText: _usernameError,
                       ),
                       controller: _usernameController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Email",
                         prefixIcon: Icon(Icons.email),
+                        errorText: _emailError,
                       ),
                       controller: _emailController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Phone",
                         prefixIcon: Icon(Icons.phone),
+                        errorText: _phoneError,
                       ),
                       controller: _phoneController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Address",
                         prefixIcon: Icon(Icons.location_on),
+                        errorText: _addressError,
                       ),
                       controller: _addressController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
-                        labelText: "Select gender: 1-MALE, 2-FEMALE",
+                        labelText: "Gender (1-Male, 2-Female)",
                         prefixIcon: Icon(Icons.transgender),
+                        errorText: _genderError,
                       ),
                       controller: _genderController,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Password",
                         prefixIcon: Icon(Icons.lock),
+                        errorText: _passwordError,
                       ),
                       controller: _passwordController,
                       obscureText: true,
+                      onChanged: (value) => _validateFields(),
                     ),
-                    SizedBox(height: 16),
+                    SizedBox(height: 8),
                     TextField(
                       decoration: InputDecoration(
                         labelText: "Confirm Password",
                         prefixIcon: Icon(Icons.lock),
+                        errorText: _confirmPasswordError,
                       ),
                       controller: _confirmPasswordController,
                       obscureText: true,
+                      onChanged: (value) => _validateFields(),
                     ),
                     SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          if (_firstnameController.text.isEmpty ||
-                              _lastnameController.text.isEmpty ||
-                              _emailController.text.isEmpty ||
-                              _phoneController.text.isEmpty ||
-                              _addressController.text.isEmpty ||
-                              _usernameController.text.isEmpty ||
-                              _passwordController.text.isEmpty ||
-                              _confirmPasswordController.text.isEmpty ||
-                              _genderController.text.isEmpty) {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) => AlertDialog(
-                                title: Text("Error"),
-                                content: Text("All fields are required!"),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
-                                ],
-                              ),
-                            );
-                          }else if(_genderController.text.toUpperCase() != '1' && _genderController.text.toUpperCase() != '2')
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) => AlertDialog(
-                                  title: Text("Error"),
-                                  content: Text("Please enter '1' or '2' for gender."),
-                                  actions: [
-                                    TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
-                                  ],
-                                ),
-                              );
-                          else if (_passwordController.text !=_confirmPasswordController.text) {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) => AlertDialog(
-                                title: Text("Error"),
-                                content: Text("Password needs to match the confirmation password."),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
-                                ],
-                              ),
-                            );
-                          } else if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(_emailController.text)) {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) => AlertDialog(
-                                title: Text("Error"),
-                                content: Text("Incorrect email format.-example@gmail.com"),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
-                                ],
-                              ),
-                            );
-                          } else if (!RegExp(r"^(?:\+?\d{10}|\d{9})$").hasMatch(_phoneController.text)) {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) => AlertDialog(
-                                title: Text("Error"),
-                                content: Text("Incorrect phone format.- 063519756"),
-                                actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context), child: Text("OK")),
-                                ],
-                              ),
-                            );
-                          } else {
+                          _validateFields();
+                          if (_isFormValid()) {
                             Map order = {
                               "ime": _firstnameController.text,
                               "prezime": _lastnameController.text,
@@ -500,8 +549,7 @@ class SignUpPage extends StatelessWidget {
                               Authorization.password = _passwordController.text;
 
                               Navigator.of(context).push(
-                              MaterialPageRoute(builder: (context) => const ProductListScreen()
-                              ),
+                                MaterialPageRoute(builder: (context) => const ProductListScreen()),
                               );
                             }
                           }
